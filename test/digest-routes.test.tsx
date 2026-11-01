@@ -76,9 +76,9 @@ describe('GET /digest/:night', () => {
 
   it('marks rows with 3 or more retries or a fail as warn', async () => {
     const html = await (await createApp(config).request('/digest/2026-02-03')).text();
-    expect(segment(html, 'a/alpha')).toContain('class="warn"');
-    expect(segment(html, 'c/mid')).toContain('class="warn"');
-    expect(segment(html, 'b/zeta')).not.toContain('class="warn"');
+    expect(html).toContain('<tr class="warn"><td>a/alpha');
+    expect(html).toContain('<tr class="warn"><td>c/mid');
+    expect(html).not.toContain('<tr class="warn"><td>b/zeta');
   });
 
   it('lists jobs in name order', async () => {
