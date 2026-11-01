@@ -1,0 +1,48 @@
+# Publishes one digest page to GitHub Pages. Runs by hand only.
+# The page is built here and never committed (ADR 0003). LANE_MARKER comes from a repo secret:
+# delete the secret and run this again to publish the same link with no marker.
+name: preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      night:
+        description: Night to publish
+        required: true
+        default: '2026-10-28'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx --yes pnpm@10 install --frozen-lockfile
+      - name: Save the page as one HTML file
+        env:
+          LANE_MARKER: ${{ secrets.LANE_MARKER }}
+          NIGHT: ${{ inputs.night }}
+        run: |
+          mkdir site
+          npx --yes pnpm@10 start &
+          for i in $(seq 1 30); do curl -fs localhost:8787/health > /dev/null && break; sleep 1; done
+          curl -fsS "localhost:8787/digest/$NIGHT" -o site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
